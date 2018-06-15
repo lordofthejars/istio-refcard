@@ -1,6 +1,92 @@
-#This Is the Refcard Title
+# Service Mesh with Istio 
 
-##This Is a First-Level Header
+## What is Service Mesh and Istio
+
+A *service mesh* is a dedicated infrastructure layer for making service-to-service communication safe, fast, and reliable.
+
+Istio is a service mesh which allows you to connect, manage and secure your microservices in an easy and none intrusive way.
+
+Some of the features that offers Istio are:
+
+* Intelligent routing and load balancing
+* Resilience against network failures
+* Policy enforcement between services
+* Observability of your architecture. Tracing and Metrics
+* Securing service to service communication
+
+### Istio Architecture
+
+Istio is composed by two major components:
+
+* **Data plane** which is composed of *Envoy* proxies deployed as sidecar container along with your service for managing network along with policy and telemetry features.
+* **Control plane** which is in charge of managing and configuring all *Envoy* proxies.
+
+![Istio Overview](arch.png "Istio Architecture")
+
+All communication within your *service mesh* happens through *Envoy* proxy, so any network logic to apply is moved from your service into your infrastructure.
+
+## Key Concepts of Istio
+
+### DestinationRule
+
+A *DestinationRule* configures the set of rules to be applied when forwarding traffic to a service.
+Some of the purposes of a *DestinationRule* are describing circuit breakers, load balancer and TLS settings or define *subsets* (named versions) of the destination host so they can be reused in other Istio elements.
+
+For example to define two services based on version label of a service with hostname *recommendation* you could do:
+
+~~~
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: recommendation
+  namespace: tutorial
+spec:
+  host: recommendation
+  subsets:
+  - labels:
+      version: v1
+    name: version-v1
+  - labels:
+      version: v2
+    name: version-v2
+~~~
+
+### VirtualService
+
+A *VirtualService* describes the mapping between one or more user-addressable destinations to the actual destination inside the mesh.
+
+As its name suggests a *VirtualService* are virtual destinations, so they are not registered into any service registry.
+
+For example, to define two virtual services where the traffic is splitted between 50% to each one.
+
+~~~
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: recommendation
+  namespace: tutorial
+spec:
+  hosts:
+  - recommendation
+  http:
+  - route:
+    - destination:
+        host: recommendation
+        subset: version-v1
+      weight: 90
+    - destination:
+        host: recommendation
+        subset: version-v2
+      weight: 10
+~~~
+
+### ServiceEntry
+
+### Gateway
+
+## Getting started with Istio
+
+### Installing Istio
 
 ###This Is a Second-Level Header
 This is the body text of the Refcard. Use two asterisks for **bold words** and one asterisk for *italic words*. **Use one underscore to create _italics_ within bold text.** _Or you can have **bold text** within italics._
