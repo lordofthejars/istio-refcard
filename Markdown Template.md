@@ -82,11 +82,91 @@ spec:
 
 ### ServiceEntry
 
+A *ServiceEntry* is used to configure traffic to external services of the mesh such as APIs or legacy systems.
+You can used it in conjunction with a *VirtualService* and/or *DestinationRule*.
+
+For example to configure _httpbin_ external service:
+
+~~~
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: httpbin-egress-rule
+  namespace: istioegress
+spec:
+  hosts:
+  - httpbin.org
+  ports:
+  - name: http-80
+    number: 80
+    protocol: http
+~~~
+
 ### Gateway
+
+A *Gateway* is used to describe a load balancer operating at the edge of the mesh for incoming/outgoing HTTP/TCP connections.
+You can bind a *Gateway* to a *VirtualService*.
+
+To configures a load balancer to allow external https traffic for host foo.com into the mesh:
+
+~~~
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: foo-gateway
+spec:
+  servers:
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    hosts:
+    - foo.com
+    tls:
+      mode: SIMPLE
+      serverCertificate: /tmp/tls.crt
+      privateKey: /tmp/tls.key
+~~~
 
 ## Getting started with Istio
 
+*Istio* can be installed with _automatic sidecar injection_ or withoutit.
+We recommend as starting point *without* _automatic sidecar injection_ so you understand each of the steps.
+
 ### Installing Istio
+
+First you need to download Istio and register in `PATH`:
+
+~~~
+curl -L https://github.com/istio/istio/releases/download/0.8.0/istio-0.8.0-osx.tar.gz | tar xz
+
+cd istio-0.8.0
+export ISTIO_HOME=`pwd`
+export PATH=$ISTIO_HOME/bin:$PATH
+~~~
+
+You can install Istio into Kubernetes cluster by either using `helm install` or `helm template`.
+
+~~~
+$ helm template install/kubernetes/helm/istio --name istio --namespace istio-system --set sidecarInjectorWebhook.enabled=false > $HOME/istio.yaml
+
+kubectl create namespace istio-system
+kubectl create -f $HOME/istio.yaml
+~~~
+
+Wait until all pods are up and running.
+
+### Intelligent Routing
+
+### Resilience
+
+### Policy Enforcement
+
+### Monitoring and Tracing
+
+¿¿¿¿¿(special headers for zipking/jaeger)?????
+
+### Service to Service Security
 
 ###This Is a Second-Level Header
 This is the body text of the Refcard. Use two asterisks for **bold words** and one asterisk for *italic words*. **Use one underscore to create _italics_ within bold text.** _Or you can have **bold text** within italics._
