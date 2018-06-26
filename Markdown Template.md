@@ -158,6 +158,125 @@ Wait until all pods are up and running.
 
 ### Intelligent Routing
 
+Routing some percentage of traffic between two versions of recommendation service:
+
+~~~
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: recommendation
+  namespace: tutorial
+spec:
+  hosts:
+  - recommendation
+  http:
+  - route:
+    - destination:
+        host: recommendation
+        subset: version-v1
+      weight: 75
+    - destination:
+        host: recommendation
+        subset: version-v2
+      weight: 25
+~~~
+
+Routing to specific version in case of prefixed URI and cookie with a value matching a regular expression:
+
+~~~
+spec:
+  hosts:
+  - ratings
+  http:
+  - match:
+    - headers:
+        cookie:
+          regex: "^(.*?;)?(user=jason)(;.*)?"
+        uri:
+          prefix: "/ratings/v2/"
+    route:
+    - destination:
+        host: ratings
+        subset: version-v2
+~~~
+
+Possible **match** options:
+
+|	Field		          | Type          |Description                                                 	|
+| ------------------|---------------|-------------------------------------------------------------|
+|	**uri**	          | `StringMatch` | URI value to match. `exact`, `prefix`, `regex`           	  |
+| **scheme**        | `StringMatch` | URI Scheme to match. `exact`, `prefix`, `regex`             |
+| **method**        | `StringMatch` | Http Method to match. `exact`, `prefix`, `regex`            |
+| **authority**     | `StringMatch` | Http Authority value to match. `exact`, `prefix`, `regex`         |
+| **headers**       | `map<string, StringMatch>` | Headers key/value. `exact`, `prefix`, `regex`         |
+| **port**          | int           | Set port being addressed. If only one port exposed, not required |
+| **sourceLabels**  | `map<string, string`> | Caller labels to match                              |
+| **gateways**      | string[]      | Names of the gateways where rule is applied to.             |
+
+Sending traffic depending on caller labels:
+
+~~~
+- match:
+  - sourceLabels:
+      app: preference
+      version: v2
+  route:
+  - destination:
+      host: recommendation
+      subset: version-v2
+- route:
+  - destination:
+      host: recommendation
+      subset: version-v1
+~~~
+
+When caller contains labels `app=preference` and `version=v2` traffic is routed to **subset** `version-v2` if not routed to `version-v1`
+
+Mirroring traffic between two versions:
+
+~~~
+spec:
+  hosts:
+  - recommendation
+  http:
+  - route:
+    - destination:
+        host: recommendation
+        subset: version-v1
+    mirror:
+      host: recommendation
+      subset: version-v2
+~~~
+
+For routing purposes `VirtualService` also supports **redirects**, **rewrites**, **corsPolicies** or *appending* custom headers.
+
+Apart from HTTP rules, `VirtualService` also supports matchers at _tcp_ level.
+
+~~~
+spec:
+  hosts:
+  - postgresql
+  tcp:
+  - match:
+    - port: 5432
+      sourceSubnet: "172.17.0.0/16"
+    route:
+    - destination:
+        host: postgresql
+        port:
+          number: 5555
+~~~
+
+Possible **match** options at _tcp_ level:
+
+|	Field		              | Type          |Description                                                 	|
+| ----------------------|---------------|-------------------------------------------------------------|
+|	**destinationSubnet**	| string        | IPv4 or IPv6 of destination with optional subnet        	  |
+| **port**              | ini           | Set port being addressed. If only one port exposed, not required |
+| **sourceSubnet**      | string        | IPv4 or IPv6 of source with optional subnet                 |
+| **sourceLabels**  | `map<string, string`> | Caller labels to match                                  |
+| **gateways**      | string[]      | Names of the gateways where rule is applied to.                 |
+
 ### Resilience
 
 ### Policy Enforcement
