@@ -279,6 +279,85 @@ Possible **match** options at _tcp_ level:
 
 ### Resilience
 
+Retry 3 times when things goes wrong before throwing the error upstream.
+
+~~~
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: recommendation
+  namespace: tutorial
+spec:
+  hosts:
+  - recommendation
+  http:
+  - retries:
+      attempts: 3
+      perTryTimeout: 4.000s
+    route:
+    - destination:
+        host: recommendation
+        subset: version-v1
+~~~
+
+You can add timeouts to communications, for example aborting call after 1 second:
+
+~~~
+http:
+- route:
+  - destination:
+      host: recommendation
+  timeout: 1.000s
+~~~
+
+Pool ejection or _outlier detection_ of an instance/pod to serve a client request, if the request is forwarded to a certain instance and it fails (e.g. returns a 50x error code).
+In next example there must occurs 5 consecutive errors before pod is ejected, ejection analysis occurs every 15 seconds, in case of ejection host will be ejected for 2 minutes and any host can be ejected.
+
+~~~
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: recommendation
+  namespace: tutorial
+spec:
+  host: recommendation
+  trafficPolicy:
+    outlierDetection:
+      http:
+        baseEjectionTime: 2m
+        consecutiveErrors: 5
+        interval: 15.000s
+        maxEjectionPercent: 100
+  subsets:
+~~~
+
+`trafficPolicy` can be applied at subset level to make it specific to a subset instead of all them.
+
+You can also create connection pools at _tcp_ and _http_ level:
+
+~~~
+trafficPolicy:
+  connectionPool:
+    http:
+      http1MaxPendingRequests: 100
+      http2MaxRequests: 100
+      maxRequestsPerConnection: 1
+    tcp:
+      maxConnections: 100
+      connectTimeout: 50ms
+~~~
+
+Traffic Policy possible values:
+
+|	Field		              | Type                    | Description                                                	|
+| ----------------------|-------------------------|-------------------------------------------------------------|
+|	**loadbalancer**	    | `LoadBalancerSettings`  | Controlling load blancer algorithm                       	  |
+| **connectionPool**    | `ConnectionPoolSettings`| Controlling connection pool                                 |
+| **outlierDetection**  | `OutlierDetection`      | Controlling eviction of unhealthy hosts                     |
+| **tls**               | `TLSSettings`           | TLS settings for connections                                |
+| **portLevelSettings** | `PortTrafficPolicy[]`   | Traffic policies specific to concrete ports                 |
+
+
 ### Policy Enforcement
 
 ### Monitoring and Tracing
