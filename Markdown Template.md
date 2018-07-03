@@ -279,7 +279,7 @@ Possible **match** options at _tcp_ level:
 
 ### Resilience
 
-Retry 3 times when things goes wrong before throwing the error upstream.
+Retry 3 times when things go wrong before throwing the error upstream.
 
 ~~~
 apiVersion: networking.istio.io/v1alpha3
@@ -310,7 +310,7 @@ http:
   timeout: 1.000s
 ~~~
 
-Pool ejection or _outlier detection_ of an instance/pod to serve a client request, if the request is forwarded to a certain instance and it fails (e.g. returns a 50x error code).
+If the request is forwarded to a certain instance and it fails (e.g. returns a 50x error code), then this instance of an instance/pod is ejected to serve any other client request for an amount of time.
 In next example there must occurs 5 consecutive errors before pod is ejected, ejection analysis occurs every 15 seconds, in case of ejection host will be ejected for 2 minutes and any host can be ejected.
 
 ~~~
@@ -360,7 +360,55 @@ Traffic Policy possible values:
 
 ### Policy Enforcement
 
-### Monitoring and Tracing
+Istio provides a model to enforce authorization policies in the communication between policies.
+You can for example black-list or white-list intercommunication between services or add some quota.
+
+You can configure that preference service only allows requests from the recommendation service.
+
+~~~
+apiVersion: "config.istio.io/v1alpha2"
+kind: listchecker
+metadata:
+  name: preferencewhitelist
+spec:
+  overrides: ["recommendation"]
+  blacklist: false
+---
+apiVersion: "config.istio.io/v1alpha2"
+kind: listentry
+metadata:
+  name: preferencesource
+spec:
+  value: source.labels["app"]
+---
+apiVersion: "config.istio.io/v1alpha2"
+kind: rule
+metadata:
+  name: checkfromcustomer
+spec:
+  match: destination.labels["app"] == "preference"
+  actions:
+  - handler: preferencewhitelist.listchecker
+    instances:
+    - preferencesource.listentry
+~~~
+
+Source part is configured by using `listchecker` (to provide the list of allows hosts) and `listentry` (to configure how to get white list value from request) elements.
+Destination part andrule is configured by using `rule` element.
+
+|	Field		              | Type                    | Description                                                	|
+| ----------------------|-------------------------|-------------------------------------------------------------|
+|	**providerUrl**	      | string                  | Url where to load the list to check against, can be empty   |
+| **refreshInterval**   | `Duration`              | How often provider is polled                                |
+| **ttl**               | `Duration`              | How long keep list before discarding it                     |
+| **cachingInterval**   | `Duration`              | How long a caller can cache an answer befoer ask again      |
+| **cachingUseCount**   | int                     | Number of times a caller can use a cached answer            |
+| **overrides**         | string[]                | List of entries consulted first before `providerUrl`        |
+| **entryType**         | `ListEntryType`         | The kind (`STRINGS`, `CASE_INSENSITIVE_STRINGS`, `IP_ADDRESSES, `REGEX`) of list entry and overrides                        |
+| **blacklist**         | boolean                 | the list operates as a blacklist or a whitelist             |
+
+
+### Telemetry, Monitoring and Tracing
 
 ¿¿¿¿¿(special headers for zipking/jaeger)?????
 
