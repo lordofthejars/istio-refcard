@@ -6,7 +6,7 @@ A *service mesh* is a dedicated infrastructure layer for making service-to-ser
 
 Istio is a service mesh which allows you to connect, manage and secure your microservices in an easy and none intrusive way.
 
-Some of the features that offers Istio are:
+Some of the features that offer Istio are:
 
 * Intelligent routing and load balancing
 * Resilience against network failures
@@ -16,7 +16,7 @@ Some of the features that offers Istio are:
 
 ### Istio Architecture
 
-Istio is composed by two major components:
+Istio is composed of two major components:
 
 * **Data plane** which is composed of *Envoy* proxies deployed as sidecar container along with your service for managing network along with policy and telemetry features.
 * **Control plane** which is in charge of managing and configuring all *Envoy* proxies.
@@ -30,9 +30,9 @@ All communication within your *service mesh* happens through *Envoy* proxy, so a
 ### DestinationRule
 
 A *DestinationRule* configures the set of rules to be applied when forwarding traffic to a service.
-Some of the purposes of a *DestinationRule* are describing circuit breakers, load balancer and TLS settings or define *subsets* (named versions) of the destination host so they can be reused in other Istio elements.
+Some of the purposes of a *DestinationRule* are describing circuit breakers, load balancer, and TLS settings or define *subsets* (named versions) of the destination host so they can be reused in other Istio elements.
 
-For example to define two services based on version label of a service with hostname *recommendation* you could do:
+For example to define two services based on the version label of a service with hostname *recommendation* you could do:
 
 ~~~
 apiVersion: networking.istio.io/v1alpha3
@@ -57,7 +57,7 @@ A *VirtualService* describes the mapping between one or more user-addressable de
 
 As its name suggests a *VirtualService* are virtual destinations, so they are not registered into any service registry.
 
-For example, to define two virtual services where the traffic is splitted between 50% to each one.
+For example, to define two virtual services where the traffic is split between 50% to each one.
 
 ~~~
 apiVersion: networking.istio.io/v1alpha3
@@ -83,7 +83,7 @@ spec:
 ### ServiceEntry
 
 A *ServiceEntry* is used to configure traffic to external services of the mesh such as APIs or legacy systems.
-You can used it in conjunction with a *VirtualService* and/or *DestinationRule*.
+You can use it in conjunction with a *VirtualService* and/or *DestinationRule*.
 
 For example to configure _httpbin_ external service:
 
@@ -130,7 +130,7 @@ spec:
 
 ## Getting started with Istio
 
-*Istio* can be installed with _automatic sidecar injection_ or withoutit.
+*Istio* can be installed with _automatic sidecar injection_ or without it.
 We recommend as starting point *without* _automatic sidecar injection_ so you understand each of the steps.
 
 ### Installing Istio
@@ -181,7 +181,7 @@ spec:
       weight: 25
 ~~~
 
-Routing to specific version in case of prefixed URI and cookie with a value matching a regular expression:
+Routing to a specific version in case of prefixed URI and cookie with a value matching a regular expression:
 
 ~~~
 spec:
@@ -311,7 +311,7 @@ http:
 ~~~
 
 If the request is forwarded to a certain instance and it fails (e.g. returns a 50x error code), then this instance of an instance/pod is ejected to serve any other client request for an amount of time.
-In next example there must occurs 5 consecutive errors before pod is ejected, ejection analysis occurs every 15 seconds, in case of ejection host will be ejected for 2 minutes and any host can be ejected.
+In next example there must occur 5 consecutive errors before pod is ejected, ejection analysis occurs every 15 seconds, in case of ejection host will be ejected for 2 minutes and any host can be ejected.
 
 ~~~
 apiVersion: networking.istio.io/v1alpha3
@@ -361,7 +361,7 @@ Traffic Policy possible values:
 ### Policy Enforcement
 
 Istio provides a model to enforce authorization policies in the communication between policies.
-You can for example black-list or white-list intercommunication between services or add some quota.
+You can, for example, black-list or white-list intercommunication between services or add some quota.
 
 You can configure that preference service only allows requests from the recommendation service.
 
@@ -393,8 +393,8 @@ spec:
     - preferencesource.listentry
 ~~~
 
-Source part is configured by using `listchecker` (to provide the list of allows hosts) and `listentry` (to configure how to get white list value from request) elements.
-Destination part andrule is configured by using `rule` element.
+Source part is configured by using `listchecker` (to provide the list of allows hosts) and `listentry` (to configure how to get whitelist value from the request) elements.
+Destination part and rule is configured by using the `rule` element.
 
 |	Field		              | Type                    | Description                                                	|
 | ----------------------|-------------------------|-------------------------------------------------------------|
