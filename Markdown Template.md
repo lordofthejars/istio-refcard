@@ -138,9 +138,9 @@ We recommend as starting point *without* _automatic sidecar injection_ so you un
 First you need to download Istio and register in `PATH`:
 
 ~~~
-curl -L https://github.com/istio/istio/releases/download/0.8.0/istio-0.8.0-osx.tar.gz | tar xz
+curl -L https://github.com/istio/istio/releases/download/1.0.2/istio-1.0.2-osx.tar.gz | tar xz
 
-cd istio-0.8.0
+cd istio-1.0.2
 export ISTIO_HOME=`pwd`
 export PATH=$ISTIO_HOME/bin:$PATH
 ~~~
@@ -323,11 +323,10 @@ spec:
   host: recommendation
   trafficPolicy:
     outlierDetection:
-      http:
-        baseEjectionTime: 2m
-        consecutiveErrors: 5
-        interval: 15.000s
-        maxEjectionPercent: 100
+      baseEjectionTime: 2m
+      consecutiveErrors: 5
+      interval: 15.000s
+      maxEjectionPercent: 100
   subsets:
 ~~~
 
@@ -404,7 +403,7 @@ Destination part and rule is configured by using the `rule` element.
 | **cachingInterval**   | `Duration`              | How long a caller can cache an answer befoer ask again      |
 | **cachingUseCount**   | int                     | Number of times a caller can use a cached answer            |
 | **overrides**         | string[]                | List of entries consulted first before `providerUrl`        |
-| **entryType**         | `ListEntryType`         | The kind (`STRINGS`, `CASE_INSENSITIVE_STRINGS`, `IP_ADDRESSES, `REGEX`) of list entry and overrides                        |
+| **entryType**         | `ListEntryType`         | The kind (`STRINGS`, `CASE_INSENSITIVE_STRINGS`, `IP_ADDRESSES, `REGEX`) of list entry and overrides |
 | **blacklist**         | boolean                 | the list operates as a blacklist or a whitelist             |
 
 
@@ -414,60 +413,103 @@ Destination part and rule is configured by using the `rule` element.
 
 ### Service to Service Security
 
-###This Is a Second-Level Header
-This is the body text of the Refcard. Use two asterisks for **bold words** and one asterisk for *italic words*. **Use one underscore to create _italics_ within bold text.** _Or you can have **bold text** within italics._
+You can secure the communication between all services by enabling mutual TLS (peer authentication).
 
-To add inline code, surround the code with backticks: `public static void main (String[] args)`.
+First, you need to enable mutual TLS.
 
-Start new paragraphs with one blank line between the two paragraphs.
-
-Code blocks should be formatted normally and surrounded above and below by three tildes:
+You can enable globally:
 
 ~~~
-System.out.println("Try to keep code lines <60 chars.");
-for(int i = 0; i < 2; i++){    
-    if(2 + 2 != 5){
-        System.out.println("Keep code neat!");
-    }
-}
+apiVersion: "authentication.istio.io/v1alpha1"
+kind: "MeshPolicy"
+metadata:
+  name: "default"
+spec:
+  peers:
+  - mtls: {}
 ~~~
 
-Build tables with vertical bars/pipes:
+By namepsace:
 
-|	Table Headings		| Go Above at Least Three Dashes	|
-| -------------------	| ------------------------------	|
-|	**For inline code**	|	`You can use backticks as normal`	|
-|	**For spacing**		|	Keep at least one space or tab between your content and the pipes.	|
-|	**Try to keep it neat**		|	But if necessary, the pipes do not have to align.	|
+~~~
+apiVersion: "authentication.istio.io/v1alpha1"
+kind: "Policy"
+metadata:
+  name: "default"
+  namespace: "tutorial"
+spec:
+  peers:
+  - mtls: {}
+~~~
 
-For links, enclose the content to be linked in square brackets, followed directly by the URL in parentheses: [This is DZone's Refcardz page.](https://dzone.com/refcardz)
+Applying mTLS to specific destination and port:
 
-Keep all images collected in a folder. To reference an image, use an exclamation point, followed by the alt text in square brackets (for the web version of the content), followed then by parentheses enclosing the following: the image directory and filename, one space, and then the image title in quotes.
+~~~
+spec:
+  target:
+  - name: preference
+    ports:
+    - number: 9000
+~~~
 
-![Alt text for this image](images_dir/Figure1.png "This is the title/caption for this image")
+If `ports` not set then it is applied to all ports.
 
-All images should be on their own line.
-
-Ordered list items should have the number, a period, a space, and then the content of that item. You can then continue your list with numbers on new lines.
-
-1. This is the first item of an ordered list.
-2. This is the second item of an ordered list.
-
-Use the plus sign then a space for unordered lists.
-
-+ This is an unordered list item.
-+ Here is another.
-
-    Blank lines above and below, and leading spaces before the content, will let you create new paragraphs within the list.
-
-+ You can then return to your list items as normal.
-
-
-
-
-
-
+|	Field		              | Type                           | Description                                                	|
+| ----------------------|--------------------------------|--------------------------------------------------------------|
+| **peers**             | `PeerAuthenticationMethod[]`   | List of authentication methods for peer auth                |
+| **peerIsOptional**    | boolean                        | Accept request when none of the peer authentication methods defined are satisfied |
+| **targets**           | `TargetSelector[]`             | Destinations where policy should be applied on. Enabled all by default |
+| **origins**           | `OriginAuthenticationMethod[]` | List of authentication methods for origin auth |
+| **originIsOptional**  | boolean                        | Accept request when none of the origin authentication methods defined are satisfied |
+| **principalBinding**  | `PrincipalBinding`             | Peer or origin identity should be use for principal. USE_PEER by default |
 
 
+End user authentication (origin authentication) using JWT:
 
+~~~
+spec:
+  origins:
+  - jwt:
+      issuer: "https://keycloak.tutorial:8080/auth/realms/istio"
+      audiences:
+      - "preference"
+      jwksUri: "https://keycloak.tutorial:8080/auth/realms/istio/protocol/openid-connect/certs"
+  principaBinding: USE_ORIGIN
+~~~
 
+At this time, `Origins` only support JWT. Possible values for JWT are:
+
+|	Field		              | Type                           | Description                                                	|
+| ----------------------|--------------------------------|--------------------------------------------------------------|
+| **issuer**            | string                         | Issuer of the token                                          |
+| **audiences**         | string[]                       | List of JWT _audiences_ allowed to access                    |
+| **jwksUri**           | string                         | URL of the public key to validate signature                  |
+| **jwtParams**         | string[]                       | JWT is sent in a query parameter                             |
+| **jwtHeaders**        | string[]                       | JWT is sent in a request header. If empty `Authorization: Bearer $token` |             
+
+After enabling mTLS, you need to configure it at the client side by using a `DestinationRule`.
+Need to set which hosts communicate through mTLS using `host` field. 
+
+~~~
+apiVersion: "networking.istio.io/v1alpha3"
+kind: "DestinationRule"
+metadata:
+  name: "default"
+  namespace: "tutorial"
+spec:
+  host: "*.tutorial.svc.cluster.local"
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+~~~
+
+|	Field		              | Type                           | Description                                                	|
+| ----------------------|--------------------------------|--------------------------------------------------------------|
+| **httpsRedirect**     | boolean                        | Send 301 redirect when communication is using HTTP asking to use HTTPS |
+| **mode**              | `TLSmode`                      | How TLS is enforced. Values _PASSTHROUGH_, _SIMPLE_, _MUTUAL_ |
+| **serverCertificate** | string                         | The location to the file of the server-side TLS certificate |
+| **privateKey**        | string                         | The location to the file of the server's private key |
+| **caCertificates**    | string                         | The location to the file of the certificate authority certificates |
+| **subjectAltNames**   | string[]                       | Alternate names to verify the subject identity |
+
+If **ISTIO_MUTUAL** is set, Istio configures client certificate, private key and CA crtificates with its internal implementation.
