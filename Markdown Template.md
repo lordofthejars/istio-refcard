@@ -409,7 +409,7 @@ Destination part and rule is configured by using the `rule` element.
 
 ### Telemetry, Monitoring and Tracing
 
-¿¿¿¿¿(special headers for zipking/jaeger)?????
+Isito comes with observability in mind providing out-of-the-box integration with Prometheus/Graphana and Jaeger.
 
 ### Service to Service Security
 
